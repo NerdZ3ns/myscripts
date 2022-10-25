@@ -1,0 +1,16 @@
+name: Build Kernel Zenfone Max Pro M2
+on:
+  push:
+    branches:
+      - master
+jobs:
+  kernel-build:
+    runs-on: ubuntu-latest
+    container:
+      image: z3zens/ubuntu:latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Kernel
+      run: |
+       git clone https://github.com/NerdZ3ns/msm-4.19 msm-4.19
+       bash kernel.sh
