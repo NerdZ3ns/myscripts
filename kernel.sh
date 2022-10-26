@@ -30,13 +30,18 @@ CAFTAG="LA.UM.11.2.1.r1-02100-sdm660.0"
 DEFCONFIG=asus/X01BD_defconfig
 
 # Get branch name
-CI_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-export CI_BRANCH
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+export BRANCH
 
 # Set environment for etc.
 export ARCH=arm64
 export SUBARCH=arm64
 export KBUILD_BUILD_USER="z3zens"
+
+#
+# clang compiler
+#
+COMPILER=clang
 
 # Set environment for telegram
 export CHATID="-1001567354257"
@@ -51,8 +56,11 @@ DISTRO=$(cat /etc/issue)
 PROCS=$(nproc --all)
 export PROCS
 
-# Check for CI
+# Check for KernelVer 4.19
+ClangMoreStrings="AR=llvm-ar NM=llvm-nm AS=llvm-as STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTAR=llvm-ar HOSTAS=llvm-as LD_LIBRARY_PATH=$TC_DIR/lib LD=ld.lld HOSTLD=ld.lld"
 export KBUILD_BUILD_HOST="nrdprjkt"
+export LLVM=1
+export LLVM_IAS=1
 
 # Check kernel version
 KERVER=$(make kernelversion)
@@ -69,22 +77,18 @@ clone() {
 	# Clone AnyKernel3
 	git clone --depth=1 https://github.com/nerdprojectorg/AnyKernel3.git -b master
 
-	# Clone clang
-	git clone https://github.com/NerdZ3ns/SDClang -b 14 clang
+	# Clone Compiler
+	if [[ $COMPILER == "clang" ]]; then
+		# Clone clang
+		git clone --single-branch --depth=1 https://git.zephyrus.id/najahi/clang -b dev/16.0 clang
+		# Set environment for clang
+		TC_DIR=$KERNEL_DIR/clang
+		# Get path and compiler string
+		KBUILD_COMPILER_STRING=$("$TC_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+		PATH=$TC_DIR/bin/:$PATH
+		export LD_LIBRARY_PATH=$TC_DIR/bin/:$LD_LIBRARY_PATH
+	fi
 
-	# Clone GCC
-	git clone https://github.com/RyuujiX/aarch64-linux-android-4.9 -b android-12.0.0_r15 gcc64
-	git clone https://github.com/RyuujiX/arm-linux-androideabi-4.9 -b android-12.0.0_r15 gcc32
-
-	# Set environment for clang
-	TC_DIR=$KERNEL_DIR/clang
-	GCC64_DIR=$KERNEL_DIR/gcc64
-	GCC32_DIR=$KERNEL_DIR/gcc32
-
-	# Get path and compiler string
-	KBUILD_COMPILER_STRING=$("$TC_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-	PATH=$TC_DIR/bin:$GCC64_DIR/bin:$GCC32_DIR/bin:$PATH
-	export LD_LIBRARY_PATH=$TC_DIR/bin/:$LD_LIBRARY_PATH
 	export PATH KBUILD_COMPILER_STRING
 }
 
@@ -119,19 +123,19 @@ setversioning() {
 build_kernel() {
 	echo -e "Kernel compilation starting"
 
-	tg_post_msg "<b>Device : </b><code>$MODEL [$DEVICE]</code>%0A<b>Branch : </b><code>$CI_BRANCH</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$(TZ=Asia/Jakarta date)</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A" "$CHATID"
+	tg_post_msg "<b>Device : </b><code>$MODEL [$DEVICE]</code>%0A<b>Branch : </b><code>$BRANCH</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>CLO Version : </b><code>$CAFTAG</code>%0A<b>Date : </b><code>$(TZ=Asia/Jakarta date)</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A" "$CHATID"
 
 	make O=out $DEFCONFIG
 
 	BUILD_START=$(date +"%s")
 
+	if [[ $COMPILER == "clang" ]]; then
 		make -j"$PROCS" O=out \
 				CC=clang \
-				CROSS_COMPILE=aarch64-linux-android- \
-				CROSS_COMPILE_ARM32=arm-linux-androideabi- \
-				CLANG_TRIPLE=aarch64-linux-gnu- \
-				HOSTCC=gcc \
-				HOSTCXX=g++ AR=llvm-ar NM=llvm-nm AS=llvm-as STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTAR=llvm-ar HOSTAS=llvm-as LD_LIBRARY_PATH=$TC_DIR/lib LD=ld.lld HOSTLD=ld.lld
+				CROSS_COMPILE=aarch64-linux-gnu- \
+				HOSTCC=clang \
+				HOSTCXX=clang++ ${ClangMoreStrings}
+	fi
 
 	BUILD_END=$(date +"%s")
 	DIFF=$((BUILD_END - BUILD_START))
