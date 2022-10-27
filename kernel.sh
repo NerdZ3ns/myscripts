@@ -80,7 +80,7 @@ clone() {
 	# Clone Compiler
 	if [[ $COMPILER == "clang" ]]; then
 		# Clone clang
-		git clone --single-branch --depth=1 https://git.zephyrus.id/najahi/clang -b dev/16.0 clang
+		git clone --single-branch --depth=1 https://gitlab.com/RyuujiX/neutron-clang -b Neutron-16 clang
 		# Set environment for clang
 		TC_DIR=$KERNEL_DIR/clang
 		# Get path and compiler string
