@@ -80,12 +80,16 @@ clone() {
 	# Clone Compiler
 	if [[ $COMPILER == "clang" ]]; then
 		# Clone clang
-		git clone --single-branch --depth=1 https://gitlab.com/RyuujiX/neutron-clang -b Neutron-16 clang
+		git clone --single-branch --depth=1 https://github.com/NerdZ3ns/SDClang -b 14 clang
+                git clone --single-branch --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-12.1.0_r22 gcc64
+                git clone --single-branch --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-12.1.0_r22 gcc32
 		# Set environment for clang
 		TC_DIR=$KERNEL_DIR/clang
+	        GCC64_DIR=$KERNEL_DIR/gcc64
+	        GCC32_DIR=$KERNEL_DIR/gcc32
 		# Get path and compiler string
 		KBUILD_COMPILER_STRING=$("$TC_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-		PATH=$TC_DIR/bin/:$PATH
+		PATH=$TC_DIR/bin:$GCC64_DIR/bin:$GCC32_DIR/bin:$PATH
 		export LD_LIBRARY_PATH=$TC_DIR/bin/:$LD_LIBRARY_PATH
 	fi
 
@@ -132,9 +136,11 @@ build_kernel() {
 	if [[ $COMPILER == "clang" ]]; then
 		make -j"$PROCS" O=out \
 				CC=clang \
+                                CROSS_COMPILE=aarch64-linux-android- \
+				CROSS_COMPILE_ARM32=arm-linux-androideabi- \
 				CROSS_COMPILE=aarch64-linux-gnu- \
-				HOSTCC=clang \
-				HOSTCXX=clang++ ${ClangMoreStrings}
+				HOSTCC=gcc \
+				HOSTCXX=g++ ${ClangMoreStrings}
 	fi
 
 	BUILD_END=$(date +"%s")
