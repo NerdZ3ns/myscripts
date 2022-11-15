@@ -16,7 +16,7 @@ jobs:
         pacman -Sy --noconfirm git bc inetutils python3 flex bison libc++ libxml2 python-pip zip wget cpio jdk-openjdk tzdata && python3 -m pip install networkx && pip3 install --upgrade gupload
     - name: Clone Source
       run: |
-        git clone --single-branch --depth=1 https://github.com/NerdZ3ns/android_kernel_asus_sdm660 -b msm-4.19
+        git clone --single-branch --depth=1 https://github.com/NerdZ3ns/android_kernel_asus_sdm660 -b topaz msm-4.19
         cd msm-4.19
         git fetch https://github.com/nerdprojectorg/android_kernel_asus_sdm660
         git cherry-pick a06609ffbfe2b2ab8bc852a109d3d67888efa403^..b3339c5d5acc8de1870b108d8011b4f7f5d63827
