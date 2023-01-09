@@ -11,6 +11,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Clone Source
-      run: git clone --single-branch --depth=1 https://github.com/NerdZ3ns/android_kernel_asus_sdm660 msm-4.4
+      run: git clone --single-branch --depth=1 https://github.com/NerdZ3ns/android_kernel_asus_sdm660 -b tm-rebase msm-4.4
     - name: Build Kernel
       run: bash kernel.sh
